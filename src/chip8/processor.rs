@@ -325,12 +325,16 @@ impl Processor {
         }
     }
 
-    fn processor_8xy6_shr(&mut self, reg1: u8, _reg2: u8) -> Result<(), Exception> {
+    fn processor_8xy6_shr(&mut self, reg1: u8, reg2: u8) -> Result<(), Exception> {
         if reg1 > 15 {
             return Err(Exception::new(ExceptionType::BadArgument));
         }
-        self.reg_v[15] = self.reg_v[reg1 as usize] & 0x1;
+        if reg2 <= 15 {
+            self.reg_v[reg1 as usize] = self.reg_v[reg2 as usize];
+        }
+        let temp: u8 = self.reg_v[reg1 as usize] % 2;
         self.reg_v[reg1 as usize] >>= 1;
+        self.reg_v[15] = temp;
         Ok(())
     }
 
@@ -343,18 +347,22 @@ impl Processor {
             self.reg_v[15] = 1;
             Ok(())
         } else {
-            self.reg_v[reg1 as usize] = self.reg_v[reg1 as usize] - self.reg_v[reg2 as usize];
+            self.reg_v[reg1 as usize] = self.reg_v[reg2 as usize].wrapping_sub(self.reg_v[reg1 as usize]);
             self.reg_v[15] = 0;
             Ok(())
         }
     }
 
-    fn processor_8xye_shl(&mut self, reg1: u8, _reg2: u8) -> Result<(), Exception> {
-        if reg1 > 15 {
+    fn processor_8xye_shl(&mut self, reg1: u8, reg2: u8) -> Result<(), Exception> {
+        if reg1 > 15 || reg2 > 15 {
             return Err(Exception::new(ExceptionType::BadArgument));
         }
-        self.reg_v[15] = (self.reg_v[reg1 as usize] & 0x80) >> 7;
+        if reg2 <= 15 {
+            self.reg_v[reg1 as usize] = self.reg_v[reg2 as usize];
+        }
+        let temp: u8 = self.reg_v[reg1 as usize] / 128;
         self.reg_v[reg1 as usize] <<= 1;
+        self.reg_v[15] = temp;
         Ok(())
     }
 

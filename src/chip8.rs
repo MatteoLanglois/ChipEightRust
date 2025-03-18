@@ -24,8 +24,8 @@ pub struct Chip8 {
 }
 
 impl Chip8 {
-    pub fn new(rom_content: &str) -> Chip8 {
-        let sdl_context = sdl2::init().map_err(|_| Exception::new(SDL)).unwrap();
+    pub fn new(rom_content: &str) -> Result<Chip8, Exception> {
+        let sdl_context = sdl2::init().map_err(|_| Exception::new(SDL))?;
         let ram = Rc::new(RefCell::new(RandomAccessMemory::new()));
         let display = Rc::new(RefCell::new(Display::new(&sdl_context.video().unwrap(), sdl_context.timer().unwrap())));
         let keyboard = Rc::new(RefCell::new(Keyboard::new()));
@@ -35,7 +35,7 @@ impl Chip8 {
             Rc::clone(&ram),
             Rc::clone(&display),
             Rc::clone(&keyboard));
-        processor.load_sprites().unwrap();
+        processor.load_sprites()?;
 
         let mut c8 = Chip8 {
             processor,
@@ -45,9 +45,9 @@ impl Chip8 {
             keyboard,
             sdl_context,
         };
-        c8.load_rom(&*c8.read_rom(rom_content).unwrap()).expect("Can't read ROM");
+        c8.load_rom(&*c8.read_rom(rom_content)?)?;
 
-        c8
+        Ok(c8)
     }
 
     pub(crate) fn start(&mut self) -> Result<(), Exception> {
@@ -62,27 +62,51 @@ impl Chip8 {
     fn load_rom(&mut self, rom_content: &[u8]) -> Result<(), Exception> {
         // Write the file content to the memory
         let mut address = 512;
-        for &byte in rom_content{
-            self.ram.borrow_mut().write(address, byte).expect("Can't write to memory");
+        for &byte in rom_content {
+            self.ram.borrow_mut().write(address, byte)?;
             address += 1;
         }
 
         Ok(())
-
     }
 
     fn cycle(&mut self) -> Result<(), Exception> {
         let mut event_pump = self.sdl_context.event_pump().map_err(|_| Exception::new(SDL))?;
         let mut cpt = 0;
-        let frame_time = Duration::from_millis(16);
+        let mut time: Instant;
         let mut last_time = Instant::now();
 
         loop {
-            for event in event_pump.poll_iter() {
-                if let sdl2::event::Event::Quit { .. } = event {
-                    println!("Quitting");
-                    return Ok(());
+            let event = event_pump.poll_event();
+            if let Some(event) = event {
+                match event {
+                    sdl2::event::Event::Quit { .. } => {
+                        println!("Quitting");
+                        return Ok(());
+                    }
+                    _ => {
+                    }
                 }
+            }
+            time = Instant::now();
+
+            if time - last_time >= Duration::from_millis(1000 / 60) {
+                if self.processor.dt > 0 {
+                    self.processor.dt -= 1;
+                }
+
+                if self.processor.st > 0 {
+                    self.processor.st -= 1;
+                    self.speaker.borrow_mut().on();
+                } else {
+                    self.speaker.borrow_mut().off();
+                }
+
+                last_time = time;
+            }
+
+            if let Some(event) = event_pump.poll_event() {
+                self.keyboard.borrow_mut().handle_event(event);
             }
 
             self.processor.fetch_decode_execute()?;
@@ -91,11 +115,11 @@ impl Chip8 {
                 self.display.borrow_mut().update()?;
             }
 
+            let frame_time = Duration::from_millis(1000 / 60);
             let elapsed = last_time.elapsed();
             if elapsed < frame_time {
                 std::thread::sleep(frame_time - elapsed);
             }
-            last_time = Instant::now();
             cpt += 1;
         }
     }
