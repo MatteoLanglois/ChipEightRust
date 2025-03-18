@@ -1,6 +1,3 @@
-extern crate sdl2;
-
-use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::{TimerSubsystem, VideoSubsystem};
 use sdl2::video::Window;
@@ -65,8 +62,6 @@ impl Display {
         let x_pos: u32 = x as u32 % (WIDTH / SCALE);
         let y_pos: u32 = y as u32 % (HEIGHT / SCALE);
 
-        println!("x_pos: {}, y_pos: {}", x_pos, y_pos);
-
         *vf = 0;
 
         for line_count in 0..sprite.length() {
@@ -79,13 +74,13 @@ impl Display {
                     };
                     let x_pos_new: usize = ((x_pos + column_count) % (WIDTH / SCALE)) as usize;
                     let y_pos_new: usize = ((y_pos + line_count as u32) % (HEIGHT / SCALE)) as usize;
-                    let old_pixel: bool = self.content[y_pos_new][x_pos_new] == 1;
+                    let old_pixel: i16 = self.content[y_pos_new][x_pos_new];
 
-                    if pixel_value && old_pixel {
+                    if pixel_value && (old_pixel == 1) {
                         self.content[y_pos_new][x_pos_new] = 0;
                         *vf = 1;
                         self.modified = 1;
-                    } else {
+                    } else if pixel_value {
                         self.content[y_pos_new][x_pos_new] = 1;
                         self.modified = 1;
                     }
@@ -97,7 +92,7 @@ impl Display {
 
     fn draw_pixel(&mut self, x: u8, y: u8, value: u8) {
         let color = if value == 0 { 0 } else { 255 };
-        let pixel: Rect = Rect::new(
+        let pixel = sdl2::rect::Rect::new(
             x as i32 * self.pixel as i32,
             y as i32 * self.pixel as i32,
             self.pixel as u32,

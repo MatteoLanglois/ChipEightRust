@@ -343,7 +343,6 @@ impl Processor {
             self.reg_v[15] = 1;
             Ok(())
         } else {
-            println!("Reg1 : {} - Reg2 : {}", self.reg_v[reg1 as usize], self.reg_v[reg2 as usize]);
             self.reg_v[reg1 as usize] = self.reg_v[reg1 as usize] - self.reg_v[reg2 as usize];
             self.reg_v[15] = 0;
             Ok(())
