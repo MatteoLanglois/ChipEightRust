@@ -11,16 +11,17 @@ pub struct Keyboard {
 impl Keyboard {
     pub fn new() -> Keyboard {
         let key_map = [
-            Keycode::Num1, Keycode::Num2, Keycode::Num3, Keycode::Num4,
-            Keycode::Q, Keycode::W, Keycode::E, Keycode::R,
-            Keycode::A, Keycode::S, Keycode::D, Keycode::F,
-            Keycode::Z, Keycode::X, Keycode::C, Keycode::V,
+            Keycode::X, Keycode::Num1, Keycode::Num2,
+            Keycode::Num3, Keycode::A, Keycode::Z,
+            Keycode::E, Keycode::Q, Keycode::S,
+            Keycode::D, Keycode::W, Keycode::C,
+            Keycode::Num4, Keycode::R, Keycode::F, Keycode::V
         ];
         Keyboard { map: key_map, pressed_keys: [0; 16] }
     }
 
     pub fn get(&self, key: u8) -> Option<u8> {
-        if key > 16 {
+        if key >= 16 {
             None
         } else {
             Some(self.pressed_keys[key as usize])
@@ -28,11 +29,11 @@ impl Keyboard {
     }
 
     pub fn wait(&self, key: u8) -> Result<u8, Exception> {
-        if key > 16 {
+        if key >= 16 {
             return Err(Exception::new(SDL));
         }
         for (i, &k) in self.map.iter().enumerate() {
-            if k == Keycode::Num1 {
+            if k == self.map[key as usize] {
                 return Ok(i as u8);
             }
         }

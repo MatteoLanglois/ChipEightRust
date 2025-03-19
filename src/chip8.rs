@@ -77,14 +77,14 @@ impl Chip8 {
         let mut last_time = Instant::now();
 
         loop {
-            let event = event_pump.poll_event();
-            if let Some(event) = event {
+            for event in event_pump.poll_event() {
                 match event {
                     sdl2::event::Event::Quit { .. } => {
                         println!("Quitting");
                         return Ok(());
                     }
                     _ => {
+                        self.keyboard.borrow_mut().handle_event(event);
                     }
                 }
             }
@@ -103,10 +103,6 @@ impl Chip8 {
                 }
 
                 last_time = time;
-            }
-
-            if let Some(event) = event_pump.poll_event() {
-                self.keyboard.borrow_mut().handle_event(event);
             }
 
             self.processor.fetch_decode_execute()?;
