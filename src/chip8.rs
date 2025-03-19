@@ -29,7 +29,7 @@ impl Chip8 {
         let ram = Rc::new(RefCell::new(RandomAccessMemory::new()));
         let display = Rc::new(RefCell::new(Display::new(&sdl_context.video().unwrap(), sdl_context.timer().unwrap())));
         let keyboard = Rc::new(RefCell::new(Keyboard::new()));
-        let speaker = Rc::new(RefCell::new(Speaker::new(&sdl_context.audio().unwrap())));
+        let speaker = Rc::new(RefCell::new(Speaker::new()));
 
         let mut processor = Processor::new(
             Rc::clone(&ram),
